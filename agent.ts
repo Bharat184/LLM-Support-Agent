@@ -1,4 +1,4 @@
-import { type JobContext, WorkerOptions, cli, defineAgent, llm, pipeline } from '@livekit/agents';
+import { type JobContext, WorkerOptions, cli, defineAgent, llm, VoicePipelineAgent } from '@livekit/agents';
 import * as openai from '@livekit/agents-plugin-openai';
 import * as silero from '@livekit/agents-plugin-silero';
 import * as path from 'path';
@@ -20,19 +20,16 @@ export default defineAgent({
 
     // 2. Initialize the Voice Pipeline
     // This handles VAD -> STT -> LLM -> TTS automatically.
-    const agent = new pipeline.VoicePipelineAgent(
+    const agent = new VoicePipelineAgent(
       // VAD: Voice Activity Detection (detects when user starts/stops speaking)
-      new silero.VAD.load(),
-      
+      await silero.VAD.load(),
       // STT: Speech-to-Text (Transcribes user audio)
       // We use OpenAI Whisper here, but Deepgram is faster for production.
       new openai.STT(),
-
       // LLM: The Brain (Generates text responses)
       new openai.LLM({
         model: 'gpt-4o-mini', // Cost-effective and fast
       }),
-
       // TTS: Text-to-Speech (Turns text back into audio)
       new openai.TTS() 
     );
@@ -41,18 +38,20 @@ export default defineAgent({
     // This prompts the agent to act like a support rep.
     const chatCtx = new llm.ChatContext().append({
       role: llm.ChatRole.SYSTEM,
-      text: `You are a helpful, friendly, and concise customer support agent for a fictional company called 'TechFlow'. 
-             Your goal is to help users troubleshoot internet connectivity issues.
-             Keep your responses short (under 2 sentences) and conversational.
-             Do not use markdown or special characters that cannot be spoken.`
+      text: `You are a helpful support agent for TechFlow. Keep answers short.`
     });
+    agent.ctx = chatCtx;
 
     // 4. Start the Agent
     await agent.start(ctx.room, participant);
+    console.log('🚀 Agent started');
 
+    // --- FIX: Add Delay ---
+    console.log('⏳ Warming up audio...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  
     // 5. Greet the user immediately upon joining
     await agent.say('Hi there! I am the TechFlow support assistant. How can I help you today?', true);
-
     console.log('Agent started and ready to chat.');
   },
 });
