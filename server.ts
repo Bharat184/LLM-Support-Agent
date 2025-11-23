@@ -16,7 +16,7 @@ const port = 3003;
 app.use(cors());
 app.use(express.json());
 
-const createToken = async (req, res) => {
+const createToken = async (req: any, res: any) => {
   // 1. Get details from the request (or generate defaults)
   const roomName = req.query.room || 'support-room-1';
   const participantName = req.query.username || 'user-' + Math.floor(Math.random() * 10000);

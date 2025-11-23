@@ -17,7 +17,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-export async function saveUserMessage(sessionId: string, message: string) {
+export async function saveUserMessage(sessionId: any, message: string) {
   try {
     const [result] = await pool.execute(
       'INSERT INTO  transcripts(user_id, text, created_at) VALUES (?, ?, NOW())',
